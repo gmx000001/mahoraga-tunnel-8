@@ -1,0 +1,20 @@
+# Core dependencies (from setup.py)
+termcolor
+beautifulsoup4
+httpx
+trio
+tqdm
+colorama
+
+# Web Dashboard dependencies (from app.py)
+flask
+httpcore
+sniffio
+
+# Testing / Deployment dependencies (from test_hang.py)
+requests
+gunicorn
+
+# Websocket dependencies
+flask-socketio
+simple-websocket

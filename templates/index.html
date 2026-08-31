@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Mahoraga Dashboard — Bulk email OSINT checker with real-time monitoring">
+  <title>Mahoraga Dashboard</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='28' font-size='28'>🔍</text></svg>">
+</head>
+<body>
+
+  <!-- ===== Header ===== -->
+  <header class="header">
+    <div class="header-brand">
+      <div class="logo-icon">M</div>
+      <h1>Mahoraga</h1>
+      <span class="version">v4-auto</span>
+    </div>
+    <div class="header-status">
+      <span id="status-dot" class="status-dot idle"></span>
+      <span id="status-text">Idle</span>
+    </div>
+  </header>
+
+  <!-- ===== Dashboard Grid ===== -->
+  <main class="dashboard">
+
+    <!-- ===== Left: Control Panel ===== -->
+    <aside class="control-panel">
+
+      <!-- Email Input -->
+      <div class="card">
+        <div class="card-header">
+          <div class="icon" style="background: var(--accent-indigo-glow); color: var(--accent-indigo);">✉</div>
+          Email List
+        </div>
+        <div class="card-body">
+          <div class="form-label">
+            Paste emails (one per line)
+            <span id="email-count" class="badge">0 emails</span>
+          </div>
+          <textarea
+            id="email-input"
+            class="email-textarea"
+            placeholder="user1@example.com&#10;user2@example.com&#10;user3@example.com&#10;..."
+            spellcheck="false"
+          ></textarea>
+        </div>
+      </div>
+
+      <!-- Domain Selector -->
+      <div class="card">
+        <div class="card-header">
+          <div class="icon" style="background: var(--accent-purple-bg); color: var(--accent-purple);">🌐</div>
+          Domain Selection
+        </div>
+        <div class="card-body">
+          <div class="domain-selector">
+            <span class="domain-search-icon">🔍</span>
+            <input
+              type="text"
+              id="domain-search"
+              class="domain-search"
+              placeholder="Search domains..."
+            >
+          </div>
+          <div class="domain-actions">
+            <button id="btn-select-all" type="button">✅ Select All</button>
+            <button id="btn-deselect-all" type="button">❌ Deselect All</button>
+            <button id="btn-select-valid" type="button">🎯 Select Valid</button>
+            <button id="btn-select-fast" type="button">⚡ Fast</button>
+          </div>
+          <div id="domain-list" class="domain-list">
+            <div class="empty-state">
+              <p>Loading domains...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Thread Size + Actions -->
+      <div class="card">
+        <div class="card-header">
+          <div class="icon" style="background: var(--accent-cyan-bg); color: var(--accent-cyan);">⚙</div>
+          Job Settings
+        </div>
+        <div class="card-body">
+          <div class="form-label">Concurrent Batch Size</div>
+          <div class="thread-input-row">
+            <input
+              type="number"
+              id="thread-size"
+              class="thread-input"
+              value="50"
+              min="1"
+              max="50"
+            >
+            <span class="thread-hint">Number of emails processed simultaneously (1–50)</span>
+          </div>
+          <div style="margin-top: 18px;">
+            <div class="form-label">Results Paste Mode</div>
+            <div class="domain-actions" style="margin-top: 8px; margin-bottom: 6px;">
+              <button id="btn-rentry-add" type="button" class="proxy-tab active" style="flex:1;">📝 Add</button>
+              <button id="btn-rentry-new" type="button" class="proxy-tab" style="flex:1;">🆕 New</button>
+            </div>
+            <div class="thread-hint">Add = append results. New = replace all. Results saved to a shared GitHub Gist (unlimited size).</div>
+          </div>
+          <div style="margin-top: 18px;">
+            <div class="form-label">Actions</div>
+            <div class="action-buttons">
+              <button id="btn-start" class="btn btn-start" type="button">▶ Start</button>
+              <button id="btn-pause" class="btn btn-pause" type="button" disabled>⏸ Pause</button>
+              <button id="btn-stop" class="btn btn-stop" type="button" disabled>⏹ Stop</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Proxy Settings -->
+      <div class="card">
+        <div class="card-header">
+          <div class="icon" style="background: var(--accent-amber-bg); color: var(--accent-amber);">🛡</div>
+          Proxy Settings
+        </div>
+        <div class="card-body">
+          <div class="form-label">Proxy Mode</div>
+          <div class="proxy-mode-tabs">
+            <button type="button" class="proxy-tab active" data-mode="none" id="proxy-tab-none">No Proxy</button>
+            <button type="button" class="proxy-tab" data-mode="list" id="proxy-tab-list">Proxy List</button>
+            <button type="button" class="proxy-tab" data-mode="api" id="proxy-tab-api">API</button>
+            <button type="button" class="proxy-tab" data-mode="single" id="proxy-tab-single">Single IP</button>
+          </div>
+
+          <!-- Proxy List Mode -->
+          <div id="proxy-panel-list" class="proxy-panel" style="display:none;">
+            <div class="form-label" style="margin-top:12px;">Proxy List <span id="proxy-count" class="badge">0 proxies</span></div>
+            <textarea
+              id="proxy-list-input"
+              class="email-textarea"
+              style="min-height:100px;"
+              placeholder="ip:port&#10;ip:port&#10;ip:port&#10;..."
+              spellcheck="false"
+            ></textarea>
+            <div class="thread-hint" style="margin-top:6px;">One proxy per line. Format: IP:Port (rotated automatically)</div>
+          </div>
+
+          <!-- API Mode -->
+          <div id="proxy-panel-api" class="proxy-panel" style="display:none;">
+            <div class="form-label" style="margin-top:12px;">Proxy API URL</div>
+            <input
+              type="text"
+              id="proxy-api-input"
+              class="domain-search"
+              style="padding-left:14px;"
+              placeholder="https://api.example.com/proxy?key=xxx"
+            >
+            <div class="thread-hint" style="margin-top:6px;">API should return a proxy in IP:Port format per request</div>
+          </div>
+
+          <!-- Single IP Mode -->
+          <div id="proxy-panel-single" class="proxy-panel" style="display:none;">
+            <div class="form-label" style="margin-top:12px;">Gateway Proxy</div>
+            <input
+              type="text"
+              id="proxy-single-input"
+              class="domain-search"
+              style="padding-left:14px;"
+              placeholder="192.168.1.100:8080"
+            >
+            <div class="thread-hint" style="margin-top:6px;">All traffic routed through this single proxy</div>
+          </div>
+        </div>
+      </div>
+
+    </aside>
+
+    <!-- ===== Right: Monitoring Panel ===== -->
+    <section class="monitoring-panel">
+
+      <!-- Progress -->
+      <div class="card">
+        <div class="card-header">
+          <div class="icon" style="background: var(--accent-indigo-glow); color: var(--accent-indigo);">📊</div>
+          Progress
+        </div>
+        <div class="card-body">
+          <div class="progress-section">
+            <div class="progress-info">
+              <span id="progress-text" class="progress-text"><strong>0</strong> / 0 emails processed</span>
+              <span id="progress-percent" class="progress-percentage">0%</span>
+            </div>
+            <div class="progress-bar-wrapper">
+              <div id="progress-bar-fill" class="progress-bar-fill"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-grid">
+        <div class="stat-card total">
+          <div id="stat-total" class="stat-value" style="transition: transform 0.2s ease;">0</div>
+          <div class="stat-label">Total Checks</div>
+        </div>
+        <div class="stat-card success">
+          <div id="stat-success" class="stat-value" style="transition: transform 0.2s ease;">0</div>
+          <div class="stat-label">Found</div>
+        </div>
+        <div class="stat-card not-found">
+          <div id="stat-not-found" class="stat-value" style="transition: transform 0.2s ease;">0</div>
+          <div class="stat-label">Not Found</div>
+        </div>
+        <div class="stat-card rate-limit">
+          <div id="stat-rate-limit" class="stat-value" style="transition: transform 0.2s ease;">0</div>
+          <div class="stat-label">Rate Limited</div>
+        </div>
+        <div class="stat-card errors">
+          <div id="stat-errors" class="stat-value" style="transition: transform 0.2s ease;">0</div>
+          <div class="stat-label">Errors</div>
+        </div>
+      </div>
+
+      <!-- Rate Metrics -->
+      <div class="rate-metrics-grid">
+        <div class="rate-card">
+          <div class="rate-icon-wrapper per-min">
+            <span class="rate-pulse"></span>
+            <span class="rate-icon">⚡</span>
+          </div>
+          <div class="rate-info">
+            <div id="rate-per-minute" class="rate-value">0</div>
+            <div class="rate-label">checks / min</div>
+          </div>
+        </div>
+        <div class="rate-card">
+          <div class="rate-icon-wrapper per-hour">
+            <span class="rate-pulse"></span>
+            <span class="rate-icon">🕐</span>
+          </div>
+          <div class="rate-info">
+            <div id="rate-per-hour" class="rate-value">0</div>
+            <div class="rate-label">checks / hour</div>
+          </div>
+        </div>
+        <div class="rate-card">
+          <div class="rate-icon-wrapper per-day">
+            <span class="rate-pulse"></span>
+            <span class="rate-icon">📅</span>
+          </div>
+          <div class="rate-info">
+            <div id="rate-per-day" class="rate-value">0</div>
+            <div class="rate-label">checks / day</div>
+          </div>
+        </div>
+        <div class="rate-card">
+          <div class="rate-icon-wrapper per-week">
+            <span class="rate-pulse"></span>
+            <span class="rate-icon">📆</span>
+          </div>
+          <div class="rate-info">
+            <div id="rate-per-week" class="rate-value">0</div>
+            <div class="rate-label">checks / week</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Results Table -->
+      <div class="card">
+        <div class="card-header">
+          <div class="icon" style="background: var(--accent-green-bg); color: var(--accent-green);">📋</div>
+          Results
+        </div>
+        <div class="card-body" style="padding: 0;">
+          <div class="results-wrapper">
+            <table class="results-table">
+              <thead>
+                <tr>
+                  <th>Email</th>
+                  <th>Domain</th>
+                  <th>Status</th>
+                  <th>Details</th>
+                </tr>
+              </thead>
+              <tbody id="results-body">
+              </tbody>
+            </table>
+            <div id="results-empty" class="empty-state">
+              <div class="empty-icon">📭</div>
+              <p>No results yet. Start a check to see results here.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Log Console -->
+      <div class="card">
+        <div class="card-header">
+          <div class="icon" style="background: rgba(255,255,255,0.05); color: var(--text-secondary);">🖥</div>
+          Log Console
+        </div>
+        <div class="card-body" style="padding: 12px;">
+          <div id="log-console" class="log-console">
+            <div class="log-line info"><span class="log-time">[--:--:--]</span>Mahoraga Dashboard ready. Paste emails and click Start.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Export -->
+      <div class="card">
+        <div class="card-header">
+          <div class="icon" style="background: var(--accent-amber-bg); color: var(--accent-amber);">💾</div>
+          Export Results
+        </div>
+        <div class="card-body">
+          <div class="export-grid">
+            <button class="btn-export" data-type="all" data-format="csv" disabled>📄 All — CSV</button>
+            <button class="btn-export" data-type="all" data-format="txt" disabled>📄 All — TXT</button>
+            <button class="btn-export" data-type="exists" data-format="csv" disabled>✅ Found — CSV</button>
+            <button class="btn-export" data-type="exists" data-format="txt" disabled>✅ Found — TXT</button>
+            <button class="btn-export" data-type="not_found" data-format="csv" disabled>❌ Not Found — CSV</button>
+            <button class="btn-export" data-type="not_found" data-format="txt" disabled>❌ Not Found — TXT</button>
+            <button class="btn-export" data-type="errors" data-format="csv" disabled>⚠ Errors — CSV</button>
+            <button class="btn-export" data-type="errors" data-format="txt" disabled>⚠ Errors — TXT</button>
+            <button class="btn-export" data-type="unchecked" data-format="csv" disabled>⏳ Unchecked — CSV</button>
+            <button class="btn-export" data-type="unchecked" data-format="txt" disabled>⏳ Unchecked — TXT</button>
+          </div>
+        </div>
+      </div>
+
+    </section>
+  </main>
+
+  <!-- Socket.IO -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
+  
+  <!-- Custom Script -->
+  <script src="/static/app.js?v=4-perf"></script>
+</body>
+</html>

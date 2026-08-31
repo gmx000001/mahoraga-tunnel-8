@@ -1,0 +1,2906 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mahodaka Workflow Manager</title>
+    <meta name="description" content="Dynamic GitHub workflow management for Mahoraga & Dahaka checkers">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        /* ═══════════════════════════════════════════════════════════════
+           DESIGN SYSTEM
+           ═══════════════════════════════════════════════════════════════ */
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-tertiary: #1a1a28;
+            --bg-card: rgba(18, 18, 30, 0.7);
+            --bg-card-hover: rgba(25, 25, 42, 0.85);
+            --border-subtle: rgba(255, 255, 255, 0.06);
+            --border-accent: rgba(99, 102, 241, 0.3);
+            --text-primary: #f0f0f5;
+            --text-secondary: #8b8b9e;
+            --text-muted: #5a5a70;
+            --accent-1: #6366f1;
+            --accent-2: #8b5cf6;
+            --accent-3: #06b6d4;
+            --accent-4: #a855f7;
+            --gradient-primary: linear-gradient(135deg, #6366f1, #8b5cf6, #06b6d4);
+            --gradient-glow: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(139,92,246,0.15), rgba(6,182,212,0.15));
+            --gradient-mahoraga: linear-gradient(135deg, #6366f1, #8b5cf6);
+            --gradient-dahaka: linear-gradient(135deg, #06b6d4, #0891b2);
+            --gradient-both: linear-gradient(135deg, #6366f1, #06b6d4);
+            --color-mahoraga: #8b5cf6;
+            --color-dahaka: #06b6d4;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
+            --info: #3b82f6;
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 20px;
+            --shadow-sm: 0 2px 8px rgba(0,0,0,0.3);
+            --shadow-md: 0 4px 16px rgba(0,0,0,0.4);
+            --shadow-lg: 0 8px 32px rgba(0,0,0,0.5);
+            --shadow-glow: 0 0 30px rgba(99,102,241,0.15);
+            --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-slow: 400ms cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Background noise texture */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: 
+                radial-gradient(ellipse at 20% 50%, rgba(99,102,241,0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 20%, rgba(6,182,212,0.06) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 80%, rgba(139,92,246,0.05) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* ═══ SCROLLBAR ═══ */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(99,102,241,0.3); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(99,102,241,0.5); }
+
+        /* ═══ LAYOUT ═══ */
+        .app {
+            position: relative;
+            z-index: 1;
+            max-width: 1440px;
+            margin: 0 auto;
+            padding: 24px 32px;
+        }
+
+        /* ═══ HEADER ═══ */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 0 32px;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .logo-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: var(--radius-md);
+            background: var(--gradient-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            box-shadow: var(--shadow-glow);
+            animation: logo-pulse 3s ease-in-out infinite;
+        }
+
+        @keyframes logo-pulse {
+            0%, 100% { box-shadow: 0 0 20px rgba(99,102,241,0.2); }
+            50% { box-shadow: 0 0 40px rgba(99,102,241,0.4); }
+        }
+
+        .header-title h1 {
+            font-size: 22px;
+            font-weight: 700;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.5px;
+        }
+
+        .header-title p {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 100px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            backdrop-filter: blur(12px);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--text-muted);
+            transition: background var(--transition-normal);
+        }
+
+        .status-dot.active {
+            background: var(--success);
+            box-shadow: 0 0 8px rgba(16,185,129,0.5);
+            animation: dot-pulse 1.5s ease-in-out infinite;
+        }
+
+        .status-dot.error { background: var(--error); }
+        .status-dot.complete { background: var(--accent-3); }
+
+        @keyframes dot-pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* ═══ WORKFLOW TYPE BADGE ═══ */
+        .workflow-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            border-radius: 100px;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            backdrop-filter: blur(12px);
+            transition: all var(--transition-normal);
+        }
+        .workflow-badge.mahoraga {
+            background: rgba(139, 92, 246, 0.12);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            color: var(--color-mahoraga);
+        }
+        .workflow-badge.dahaka {
+            background: rgba(6, 182, 212, 0.12);
+            border: 1px solid rgba(6, 182, 212, 0.3);
+            color: var(--color-dahaka);
+        }
+        .workflow-badge.both {
+            background: rgba(99, 102, 241, 0.12);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            color: var(--accent-1);
+        }
+        .workflow-badge.running {
+            animation: badge-glow 2s ease-in-out infinite;
+        }
+        @keyframes badge-glow {
+            0%, 100% { box-shadow: 0 0 8px rgba(99,102,241,0.1); }
+            50% { box-shadow: 0 0 20px rgba(99,102,241,0.3); }
+        }
+
+        /* ═══ START TIME BADGE ═══ */
+        .time-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            background: rgba(16, 185, 129, 0.08);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            border-radius: 100px;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--success);
+            font-family: 'JetBrains Mono', monospace;
+            backdrop-filter: blur(12px);
+        }
+        .time-badge .elapsed {
+            color: rgba(16, 185, 129, 0.7);
+            font-size: 11px;
+        }
+
+        /* ═══ WORKFLOW SELECTOR ═══ */
+        .workflow-selector {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 20px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            margin-bottom: 20px;
+            backdrop-filter: blur(12px);
+        }
+
+        .selector-label {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            white-space: nowrap;
+        }
+
+        .selector-group {
+            display: flex;
+            gap: 4px;
+            background: var(--bg-primary);
+            border-radius: var(--radius-md);
+            padding: 3px;
+        }
+
+        .selector-btn {
+            padding: 8px 18px;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-family: 'Inter', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition-normal);
+            background: transparent;
+            color: var(--text-muted);
+            position: relative;
+        }
+
+        .selector-btn:hover {
+            color: var(--text-secondary);
+            background: rgba(255,255,255,0.04);
+        }
+
+        .selector-btn.active {
+            color: white;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .selector-btn.active.mahoraga {
+            background: var(--gradient-mahoraga);
+        }
+        .selector-btn.active.dahaka {
+            background: var(--gradient-dahaka);
+        }
+        .selector-btn.active.both {
+            background: var(--gradient-both);
+        }
+
+        .selector-divider {
+            width: 1px;
+            height: 32px;
+            background: var(--border-subtle);
+            margin: 0 8px;
+        }
+
+        /* Push target checkboxes */
+        .push-targets {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .push-target-check {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            transition: color var(--transition-fast);
+        }
+
+        .push-target-check:hover {
+            color: var(--text-primary);
+        }
+
+        .push-target-check input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: var(--accent-1);
+            cursor: pointer;
+        }
+
+        .push-target-check .type-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .push-target-check .type-dot.mahoraga { background: var(--color-mahoraga); }
+        .push-target-check .type-dot.dahaka { background: var(--color-dahaka); }
+
+        /* ═══ PIPELINE STEPPER ═══ */
+        .stepper {
+            display: flex;
+            align-items: center;
+            gap: 0;
+            padding: 20px 28px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            margin-bottom: 24px;
+            backdrop-filter: blur(12px);
+            overflow-x: auto;
+        }
+
+        .step {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 12px;
+            border-radius: var(--radius-sm);
+            transition: all var(--transition-normal);
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .step-number {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 600;
+            background: var(--bg-tertiary);
+            border: 2px solid var(--border-subtle);
+            color: var(--text-muted);
+            transition: all var(--transition-normal);
+            flex-shrink: 0;
+        }
+
+        .step.active .step-number {
+            background: var(--accent-1);
+            border-color: var(--accent-1);
+            color: white;
+            box-shadow: 0 0 16px rgba(99,102,241,0.4);
+            animation: step-glow 1.5s ease-in-out infinite;
+        }
+
+        .step.completed .step-number {
+            background: var(--success);
+            border-color: var(--success);
+            color: white;
+        }
+
+        .step.completed .step-number::after {
+            content: '✓';
+            font-size: 14px;
+        }
+
+        .step.completed .step-number span { display: none; }
+
+        @keyframes step-glow {
+            0%, 100% { box-shadow: 0 0 12px rgba(99,102,241,0.3); }
+            50% { box-shadow: 0 0 24px rgba(99,102,241,0.6); }
+        }
+
+        .step-label {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-muted);
+            transition: color var(--transition-normal);
+        }
+
+        .step.active .step-label { color: var(--text-primary); }
+        .step.completed .step-label { color: var(--success); }
+
+        .step-divider {
+            width: 28px;
+            height: 2px;
+            background: var(--border-subtle);
+            flex-shrink: 0;
+            transition: background var(--transition-normal);
+        }
+
+        .step-divider.completed { background: var(--success); }
+
+        /* ═══ CONTROL BAR ═══ */
+        .control-bar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 24px;
+            flex-wrap: nowrap;
+            white-space: nowrap;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 8px 14px;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-family: 'Inter', sans-serif;
+            font-size: 12.5px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition-normal);
+            position: relative;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent);
+            opacity: 0;
+            transition: opacity var(--transition-fast);
+        }
+
+        .btn:hover::before { opacity: 1; }
+
+        .btn-primary {
+            background: var(--gradient-primary);
+            color: white;
+            box-shadow: 0 4px 16px rgba(99,102,241,0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 24px rgba(99,102,241,0.4);
+        }
+
+        .btn-primary:active { transform: translateY(0); }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-subtle);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-card-hover);
+            color: var(--text-primary);
+            border-color: var(--border-accent);
+        }
+
+        .btn-icon { font-size: 13px; }
+
+        /* Spinner for running state */
+        .spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ═══ GRID LAYOUT ═══ */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+
+        @media (max-width: 1100px) {
+            .main-grid { grid-template-columns: 1fr; }
+        }
+
+        /* ═══ PANELS ═══ */
+        .panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            backdrop-filter: blur(12px);
+            overflow: hidden;
+            transition: border-color var(--transition-normal);
+        }
+
+        .panel:hover { border-color: var(--border-accent); }
+
+        .panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .panel-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .panel-title-icon { font-size: 16px; }
+
+        .panel-badge {
+            padding: 3px 10px;
+            border-radius: 100px;
+            font-size: 11px;
+            font-weight: 600;
+            background: rgba(99,102,241,0.15);
+            color: var(--accent-1);
+        }
+
+        .panel-body { padding: 16px 20px; }
+
+        /* ═══ ACCOUNT CARDS ═══ */
+        .accounts-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .account-card {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 14px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            transition: all var(--transition-normal);
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+        }
+
+        .account-card:hover {
+            border-color: var(--border-accent);
+            background: var(--bg-card-hover);
+            transform: translateY(-1px);
+        }
+
+        .account-card.selected {
+            border-color: var(--error);
+            background: rgba(239, 68, 68, 0.08);
+            box-shadow: 0 0 16px rgba(239, 68, 68, 0.12);
+        }
+
+        .account-card.selected:hover { background: rgba(239, 68, 68, 0.14); }
+
+        .account-checkbox {
+            width: 18px;
+            height: 18px;
+            border-radius: 4px;
+            border: 2px solid var(--border-subtle);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: all var(--transition-fast);
+            font-size: 11px;
+            color: transparent;
+        }
+
+        .account-card:hover .account-checkbox { border-color: var(--text-muted); }
+
+        .account-card.selected .account-checkbox {
+            background: var(--error);
+            border-color: var(--error);
+            color: white;
+        }
+
+        .account-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 700;
+            flex-shrink: 0;
+            background: var(--gradient-glow);
+            border: 1px solid var(--border-subtle);
+            color: var(--accent-1);
+        }
+
+        .account-card.active .account-avatar {
+            background: rgba(16,185,129,0.15);
+            border-color: rgba(16,185,129,0.3);
+            color: var(--success);
+        }
+
+        .account-card.suspended .account-avatar {
+            background: rgba(239,68,68,0.15);
+            border-color: rgba(239,68,68,0.3);
+            color: var(--error);
+        }
+
+        .account-info { flex: 1; min-width: 0; }
+
+        .account-name {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .account-repo {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 1px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .account-type-tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 1px 6px;
+            border-radius: 4px;
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .account-type-tag.mahoraga {
+            background: rgba(139, 92, 246, 0.15);
+            color: var(--color-mahoraga);
+        }
+
+        .account-type-tag.dahaka {
+            background: rgba(6, 182, 212, 0.15);
+            color: var(--color-dahaka);
+        }
+
+        .account-status-icon { font-size: 14px; flex-shrink: 0; }
+
+        /* ═══ DELETE BUTTON ═══ */
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+            box-shadow: 0 4px 16px rgba(239, 68, 68, 0.3);
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(4px) scale(0.95);
+            transition: all var(--transition-normal);
+        }
+
+        .btn-danger.visible {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateY(0) scale(1);
+        }
+
+        .btn-danger:hover {
+            transform: translateY(-1px) scale(1.02);
+            box-shadow: 0 6px 24px rgba(239, 68, 68, 0.4);
+        }
+
+        .btn-danger:active { transform: translateY(0) scale(1); }
+
+        .selection-count {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.25);
+            border-radius: 100px;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--error);
+            opacity: 0;
+            pointer-events: none;
+            transition: all var(--transition-normal);
+            flex-shrink: 0;
+        }
+
+        .selection-count.visible { opacity: 1; pointer-events: auto; }
+
+        /* ═══ CONFIRM DELETE MODAL ═══ */
+        .delete-list {
+            max-height: 200px;
+            overflow-y: auto;
+            margin: 12px 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        .delete-list li {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 12px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-sm);
+            margin-bottom: 6px;
+            font-size: 13px;
+            animation: delete-item-in 0.2s ease-out both;
+        }
+
+        .delete-list li .del-user { font-weight: 600; color: var(--text-primary); }
+        .delete-list li .del-repo { color: var(--text-muted); font-size: 11px; }
+
+        .delete-warning {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 12px 16px;
+            background: rgba(245, 158, 11, 0.08);
+            border: 1px solid rgba(245, 158, 11, 0.2);
+            border-radius: var(--radius-sm);
+            margin-top: 12px;
+            font-size: 12px;
+            color: var(--warning);
+            line-height: 1.6;
+        }
+
+        .delete-warning-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+
+        @keyframes delete-item-in {
+            from { opacity: 0; transform: translateX(-8px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        /* ═══ LOG CONSOLE ═══ */
+        .log-console {
+            height: 360px;
+            overflow-y: auto;
+            padding: 12px 16px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            line-height: 1.7;
+            background: rgba(6, 6, 12, 0.5);
+            border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+        }
+
+        .log-line {
+            display: flex;
+            gap: 8px;
+            padding: 1px 0;
+            animation: log-fade-in 0.3s ease-out;
+        }
+
+        @keyframes log-fade-in {
+            from { opacity: 0; transform: translateX(-8px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .log-time { color: var(--text-muted); flex-shrink: 0; font-size: 11px; }
+        .log-msg { word-break: break-all; }
+        .log-msg.info { color: var(--text-secondary); }
+        .log-msg.success { color: var(--success); }
+        .log-msg.warn { color: var(--warning); }
+        .log-msg.error { color: var(--error); }
+
+        /* ═══ TUNNEL TABLE ═══ */
+        .tunnel-section { margin-top: 0; }
+
+        .tunnel-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        .tunnel-table thead th {
+            padding: 10px 16px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            text-align: left;
+            background: var(--bg-tertiary);
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .tunnel-table thead th:first-child { border-radius: var(--radius-sm) 0 0 0; }
+        .tunnel-table thead th:last-child { border-radius: 0 var(--radius-sm) 0 0; }
+
+        .tunnel-table tbody td {
+            padding: 10px 16px;
+            font-size: 13px;
+            border-bottom: 1px solid var(--border-subtle);
+            vertical-align: middle;
+        }
+
+        .tunnel-table tbody tr { transition: background var(--transition-fast); }
+        .tunnel-table tbody tr:hover { background: rgba(99,102,241,0.05); }
+
+        .tunnel-url {
+            color: var(--accent-3);
+            text-decoration: none;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            transition: color var(--transition-fast);
+        }
+
+        .tunnel-url:hover { color: var(--accent-1); text-decoration: underline; }
+
+        .copy-btn {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-secondary);
+            padding: 4px 10px;
+            border-radius: var(--radius-sm);
+            font-size: 12px;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            font-family: 'Inter', sans-serif;
+        }
+
+        .copy-btn:hover { background: var(--accent-1); color: white; border-color: var(--accent-1); }
+
+        .copy-btn.copied { background: var(--success); color: white; border-color: var(--success); }
+
+        .status-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 3px 10px;
+            border-radius: 100px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .status-tag.active { background: rgba(16,185,129,0.12); color: var(--success); }
+        .status-tag.suspended { background: rgba(239,68,68,0.12); color: var(--error); }
+        .status-tag.pending { background: rgba(245,158,11,0.12); color: var(--warning); }
+        .status-tag.replacement { background: rgba(99,102,241,0.12); color: var(--accent-1); }
+
+        /* Type tag in tunnel table */
+        .type-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 10px;
+            border-radius: 100px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .type-tag.mahoraga {
+            background: rgba(139, 92, 246, 0.12);
+            color: var(--color-mahoraga);
+        }
+
+        .type-tag.dahaka {
+            background: rgba(6, 182, 212, 0.12);
+            color: var(--color-dahaka);
+        }
+
+        /* ═══ STATS ROW ═══ */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            padding: 16px 20px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            backdrop-filter: blur(12px);
+            transition: all var(--transition-normal);
+        }
+
+        .stat-card:hover {
+            border-color: var(--border-accent);
+            transform: translateY(-2px);
+        }
+
+        .stat-label {
+            font-size: 11px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 800;
+            letter-spacing: -1px;
+        }
+
+        .stat-value.gradient {
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-sub {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        /* ═══ EMPTY STATE ═══ */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 48px 24px;
+            color: var(--text-muted);
+        }
+
+        .empty-state-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.4; }
+        .empty-state p { font-size: 14px; text-align: center; }
+
+        /* ═══ FULL WIDTH PANEL ═══ */
+        .full-width { grid-column: 1 / -1; }
+
+        /* ═══ RESPONSIVE ═══ */
+        @media (max-width: 768px) {
+            .app { padding: 16px; }
+            .header { flex-direction: column; gap: 16px; align-items: flex-start; }
+            .accounts-grid { grid-template-columns: 1fr; }
+            .stats-row { grid-template-columns: repeat(2, 1fr); }
+            .stepper { padding: 12px 16px; }
+            .workflow-selector { flex-wrap: wrap; }
+        }
+
+        /* ═══ DETECT MODAL ═══ */
+        .detect-results {
+            max-height: 400px;
+            overflow-y: auto;
+            margin: 0;
+        }
+
+        .detect-account {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            margin-bottom: 8px;
+            transition: all var(--transition-normal);
+            animation: delete-item-in 0.2s ease-out both;
+        }
+
+        .detect-account:hover {
+            border-color: var(--border-accent);
+        }
+
+        .detect-account.connected {
+            border-color: rgba(16, 185, 129, 0.3);
+            background: rgba(16, 185, 129, 0.05);
+        }
+
+        .detect-account.disconnected {
+            opacity: 0.5;
+        }
+
+        .detect-account .detect-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .detect-account.connected .detect-avatar {
+            background: rgba(16,185,129,0.15);
+            color: var(--success);
+        }
+
+        .detect-account.disconnected .detect-avatar {
+            background: rgba(239,68,68,0.1);
+            color: var(--error);
+        }
+
+        .detect-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .detect-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .detect-detail {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .detect-repos {
+            font-size: 10px;
+            color: var(--text-muted);
+            margin-top: 4px;
+            max-height: 40px;
+            overflow-y: auto;
+        }
+
+        .detect-repo-chip {
+            display: inline-block;
+            padding: 1px 6px;
+            background: rgba(99,102,241,0.1);
+            border-radius: 4px;
+            font-size: 10px;
+            color: var(--accent-1);
+            margin: 1px 2px;
+        }
+
+        .detect-status-tag {
+            padding: 4px 10px;
+            border-radius: 100px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            flex-shrink: 0;
+        }
+
+        .detect-status-tag.connected {
+            background: rgba(16,185,129,0.12);
+            color: var(--success);
+        }
+
+        .detect-status-tag.not-connected {
+            background: rgba(239,68,68,0.12);
+            color: var(--error);
+        }
+
+        .detect-status-tag.configured {
+            background: rgba(99,102,241,0.12);
+            color: var(--accent-1);
+        }
+
+        .detect-summary {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 12px 16px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            margin-bottom: 16px;
+        }
+
+        .detect-summary-stat {
+            text-align: center;
+        }
+
+        .detect-summary-stat .num {
+            font-size: 24px;
+            font-weight: 800;
+        }
+
+        .detect-summary-stat .num.green { color: var(--success); }
+        .detect-summary-stat .num.red { color: var(--error); }
+        .detect-summary-stat .num.blue { color: var(--accent-1); }
+
+        .detect-summary-stat .lbl {
+            font-size: 10px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .detect-extra-input {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .detect-extra-input .form-input {
+            flex: 1;
+        }
+
+        /* ═══ MODAL OVERLAY ═══ */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            animation: modal-fade-in 0.3s ease-out;
+        }
+
+        .modal-overlay.active { display: flex; }
+
+        @keyframes modal-fade-in {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-accent);
+            border-radius: var(--radius-xl);
+            width: 100%;
+            max-width: 520px;
+            box-shadow: var(--shadow-lg), 0 0 60px rgba(99,102,241,0.15);
+            animation: modal-slide-up 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+            overflow: hidden;
+        }
+
+        @keyframes modal-slide-up {
+            from { opacity: 0; transform: translateY(30px) scale(0.97); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .modal-header h2 {
+            font-size: 18px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .modal-close {
+            width: 32px;
+            height: 32px;
+            border: none;
+            background: var(--bg-tertiary);
+            border-radius: 50%;
+            color: var(--text-secondary);
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all var(--transition-fast);
+        }
+
+        .modal-close:hover { background: var(--error); color: white; }
+
+        .modal-body { padding: 24px; }
+
+        .modal-footer {
+            padding: 16px 24px;
+            border-top: 1px solid var(--border-subtle);
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        /* ═══ FORM ELEMENTS ═══ */
+        .form-group { margin-bottom: 18px; }
+
+        .form-label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 10px 14px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            transition: all var(--transition-fast);
+            outline: none;
+        }
+
+        .form-input:focus {
+            border-color: var(--accent-1);
+            box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+        }
+
+        .form-input::placeholder { color: var(--text-muted); }
+
+        .form-hint { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+
+        .form-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+
+        .form-checkbox input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: var(--accent-1);
+            cursor: pointer;
+        }
+
+        .form-checkbox span { font-size: 13px; color: var(--text-secondary); }
+
+        /* ═══ FORM SELECT ═══ */
+        .form-select {
+            width: 100%;
+            padding: 10px 14px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            font-size: 13px;
+            transition: all var(--transition-fast);
+            outline: none;
+            cursor: pointer;
+        }
+
+        .form-select:focus {
+            border-color: var(--accent-1);
+            box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+        }
+
+        .form-select option { background: var(--bg-secondary); }
+
+        /* ═══ MODAL STEPS ═══ */
+        .modal-step { display: none; }
+        .modal-step.active { display: block; }
+
+        .btn-success {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            box-shadow: 0 4px 16px rgba(16,185,129,0.3);
+        }
+
+        .btn-success:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 24px rgba(16,185,129,0.4);
+        }
+
+        .btn-info {
+            background: linear-gradient(135deg, #06b6d4, #0891b2);
+            color: white;
+            box-shadow: 0 4px 16px rgba(6,182,212,0.3);
+        }
+
+        .btn-info:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 24px rgba(6,182,212,0.4);
+        }
+
+        .btn-info:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .success-icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+            animation: success-bounce 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        @keyframes success-bounce {
+            0% { transform: scale(0); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+
+        /* ═══ DEVICE CODE ═══ */
+        .device-status {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 13px;
+            color: var(--text-muted);
+            padding: 8px 0;
+        }
+
+        .device-status .spinner {
+            width: 14px;
+            height: 14px;
+            border: 2px solid rgba(99,102,241,0.3);
+            border-top-color: var(--accent-1);
+        }
+
+        .device-status.success { color: var(--success); font-weight: 600; }
+        .device-status.error { color: var(--error); }
+
+        /* ═══ ACCOUNTS TYPE SECTION HEADER ═══ */
+        .accounts-section-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 10px;
+            margin-top: 6px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .accounts-section-header:first-child { margin-top: 0; }
+
+        .accounts-section-header .section-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .accounts-section-header .section-dot.mahoraga { background: var(--color-mahoraga); }
+        .accounts-section-header .section-dot.dahaka { background: var(--color-dahaka); }
+
+        .accounts-section-header .section-title {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+        }
+
+        .accounts-section-header .section-count {
+            font-size: 10px;
+            padding: 1px 8px;
+            border-radius: 100px;
+            background: rgba(255,255,255,0.05);
+            color: var(--text-muted);
+            margin-left: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <!-- ═══ HEADER ═══ -->
+        <header class="header">
+            <div class="header-left">
+                <div class="logo-icon">⚡</div>
+                <div class="header-title">
+                    <h1>Mahodaka Workflow Manager</h1>
+                    <p>Mahoraga & Dahaka — GitHub workflow orchestration</p>
+                </div>
+            </div>
+            <div class="header-right">
+                <button id="btnGeneratorEmails" class="btn btn-secondary" onclick="runGeneratorEmails()" style="padding: 6px 14px; font-size: 12px; margin-right: 8px; border: 1px solid var(--border-accent); display: flex; align-items: center; gap: 6px; background: rgba(99,102,241,0.1); color: var(--accent-1); border-radius: 100px; font-weight: 700;">
+                    📧 Email Generator
+                </button>
+                <div class="workflow-badge" id="workflowBadge" style="display:none;">
+                    <span id="workflowBadgeText">—</span>
+                </div>
+                <div class="time-badge" id="timeBadge" style="display:none;">
+                    🕐 <span id="startTimeText">—</span>
+                    <span class="elapsed" id="elapsedText"></span>
+                </div>
+                <div class="status-badge" id="globalStatus">
+                    <span class="status-dot" id="statusDot"></span>
+                    <span id="statusText">Idle</span>
+                </div>
+            </div>
+        </header>
+
+        <div class="stats-row">
+            <div class="stat-card">
+                <div class="stat-label">Total Accounts</div>
+                <div class="stat-value gradient" id="statTotal">0</div>
+                <div class="stat-sub">Configured</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Connected</div>
+                <div class="stat-value" id="statConnected" style="color: var(--accent-3);">0</div>
+                <div class="stat-sub">Authenticated</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Active</div>
+                <div class="stat-value" id="statActive" style="color: var(--success);">—</div>
+                <div class="stat-sub">Responding</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Tunnels</div>
+                <div class="stat-value" id="statTunnels" style="color: var(--accent-3);">—</div>
+                <div class="stat-sub">Live URLs</div>
+            </div>
+        </div>
+
+        <!-- ═══ WORKFLOW SELECTOR ═══ -->
+        <div class="workflow-selector">
+            <span class="selector-label">Workflow</span>
+            <div class="selector-group" id="workflowGroup">
+                <button class="selector-btn active mahoraga" data-type="mahoraga" onclick="selectWorkflow('mahoraga')">⚔️ Mahoraga</button>
+                <button class="selector-btn" data-type="dahaka" onclick="selectWorkflow('dahaka')">🐉 Dahaka</button>
+                <button class="selector-btn" data-type="both" onclick="selectWorkflow('both')">🔥 Both</button>
+            </div>
+
+            <div class="selector-divider"></div>
+
+            <span class="selector-label">Push To</span>
+            <div class="push-targets">
+                <label class="push-target-check">
+                    <input type="checkbox" id="pushMahoraga" checked onchange="updatePushTargets()">
+                    <span class="type-dot mahoraga"></span>
+                    <span>Mahoraga</span>
+                </label>
+                <label class="push-target-check">
+                    <input type="checkbox" id="pushDahaka" onchange="updatePushTargets()">
+                    <span class="type-dot dahaka"></span>
+                    <span>Dahaka</span>
+                </label>
+            </div>
+        </div>
+
+        <!-- ═══ PIPELINE STEPPER ═══ -->
+        <div class="stepper" id="stepper">
+            <div class="step" data-step="1" id="step-1">
+                <div class="step-number"><span>1</span></div>
+                <span class="step-label">Validating</span>
+            </div>
+            <div class="step-divider" id="div-1"></div>
+            <div class="step" data-step="2" id="step-2">
+                <div class="step-number"><span>2</span></div>
+                <span class="step-label">Cleaning Actions</span>
+            </div>
+            <div class="step-divider" id="div-2"></div>
+            <div class="step" data-step="3" id="step-3">
+                <div class="step-number"><span>3</span></div>
+                <span class="step-label">Deleting Repos</span>
+            </div>
+            <div class="step-divider" id="div-3"></div>
+            <div class="step" data-step="4" id="step-4">
+                <div class="step-number"><span>4</span></div>
+                <span class="step-label">Pushing Code</span>
+            </div>
+            <div class="step-divider" id="div-4"></div>
+            <div class="step" data-step="5" id="step-5">
+                <div class="step-number"><span>5</span></div>
+                <span class="step-label">Creating Tunnels</span>
+            </div>
+            <div class="step-divider" id="div-5"></div>
+            <div class="step" data-step="6" id="step-6">
+                <div class="step-number"><span>6</span></div>
+                <span class="step-label">Triggering</span>
+            </div>
+            <div class="step-divider" id="div-6"></div>
+            <div class="step" data-step="7" id="step-7">
+                <div class="step-number"><span>7</span></div>
+                <span class="step-label">Fetching URLs</span>
+            </div>
+        </div>
+
+        <!-- ═══ CONTROL BAR ═══ -->
+        <div class="control-bar">
+            <div style="display: flex; align-items: center; gap: 6px; margin-right: 4px; background: var(--bg-tertiary); padding: 3px 10px; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle); flex-shrink: 0;">
+                <label style="font-size: 11.5px; color: var(--text-muted); font-weight: 600;">Tunnels/Account:</label>
+                <input type="number" id="numTunnelsInput" min="1" max="20" value="5" class="form-input" style="width: 48px; height: 26px; text-align: center; font-weight: 600; padding: 0; font-size: 12px;">
+            </div>
+
+            <button class="btn btn-primary" id="btnRun" onclick="runPipeline()">
+                <span class="btn-icon">▶</span>
+                Run Pipeline
+            </button>
+            <button class="btn btn-secondary" id="btnRefresh" onclick="refreshStatus()">
+                <span class="btn-icon">🔄</span>
+                Refresh
+            </button>
+            <button class="btn btn-secondary" id="btnClearLogs" onclick="clearLogs()">
+                <span class="btn-icon">🧹</span>
+                Clear Logs
+            </button>
+            <button class="btn btn-info" id="btnGetUrls" onclick="getCurrentUrls()">
+                <span class="btn-icon">🌐</span>
+                Get Current URL
+            </button>
+            <button class="btn btn-success" id="btnAddAccount" onclick="openAddAccountModal()">
+                <span class="btn-icon">➕</span>
+                Add Account
+            </button>
+            <button class="btn btn-secondary" id="btnDetect" onclick="detectAccounts()">
+                <span class="btn-icon">🔍</span>
+                Detect Connected
+            </button>
+            <span class="selection-count" id="selectionCount">0 selected</span>
+            <button class="btn btn-danger" id="btnDeleteSelected" onclick="openDeleteModal()">
+                <span class="btn-icon">🗑️</span>
+                Delete Selected
+            </button>
+        </div>
+
+        <!-- ═══ MAIN GRID ═══ -->
+        <div class="main-grid">
+            <!-- Accounts Panel -->
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title">
+                        <span class="panel-title-icon">👤</span>
+                        GitHub Accounts
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 11px;" onclick="selectAllAccounts()" id="btnSelectAll">Select All</button>
+                        <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 11px;" onclick="deselectAllAccounts()" id="btnDeselectAll">Deselect All</button>
+                        <span class="panel-badge" id="accountsBadge">0 accounts</span>
+                    </div>
+                </div>
+                <div class="panel-body">
+                    <div id="accountsContainer">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Live Log Console -->
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title">
+                        <span class="panel-title-icon">📡</span>
+                        Live Console
+                    </div>
+                    <span class="panel-badge" id="logCount">0 lines</span>
+                </div>
+                <div class="log-console" id="logConsole">
+                    <div class="empty-state" id="logEmpty">
+                        <div class="empty-state-icon">📋</div>
+                        <p>Logs will appear here when the pipeline runs</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tunnel URLs Table (full width) -->
+            <div class="panel full-width tunnel-section">
+                <div class="panel-header">
+                    <div class="panel-title">
+                        <span class="panel-title-icon">🌐</span>
+                        Tunnel URLs
+                    </div>
+                    <span class="panel-badge" id="tunnelBadge">0 live</span>
+                </div>
+                <div class="panel-body" id="tunnelBody" style="padding: 0;">
+                    <div class="empty-state" id="tunnelEmpty">
+                        <div class="empty-state-icon">🔗</div>
+                        <p>Tunnel URLs will appear after pipeline execution</p>
+                    </div>
+                    <table class="tunnel-table" id="tunnelTable" style="display: none;">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Type</th>
+                                <th>Account</th>
+                                <th>Repository</th>
+                                <th>Status</th>
+                                <th>Tunnel URL</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tunnelTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ ADD ACCOUNT MODAL ═══ -->
+    <div class="modal-overlay" id="addAccountModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>🔑 Add GitHub Account</h2>
+                <button class="modal-close" onclick="closeAddAccountModal()">✕</button>
+            </div>
+
+            <!-- Step 1: Enter GitHub URL or Username -->
+            <div class="modal-step active" id="authStep1">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="form-label">GitHub Username or Repository URL</label>
+                        <input class="form-input" type="text" id="authInput" placeholder="e.g. https://github.com/Kira41/dahaka  or  Kira41" autocomplete="off">
+                        <div class="form-hint">Enter a full URL like <strong>https://github.com/user/repo</strong>, or just a <strong>username</strong></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Repository Name (optional)</label>
+                        <input class="form-input" type="text" id="authRepoName" placeholder="auto-generated if empty" autocomplete="off">
+                        <div class="form-hint">Override the repo name. Leave empty to use the one from the URL or auto-generate.</div>
+                    </div>
+
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="closeAddAccountModal()">Cancel</button>
+                    <button class="btn btn-primary" id="btnStartAuth" onclick="startGitAuth()">Connect Account</button>
+                </div>
+            </div>
+
+            <!-- Step 2: Waiting for Git Login -->
+            <div class="modal-step" id="authStep2">
+                <div class="modal-body">
+                    <div style="text-align: center; padding: 16px 0;">
+                        <div style="font-size: 48px; margin-bottom: 16px;">🔐</div>
+                        <h3 style="margin-bottom: 8px; font-size: 17px;">Waiting for Login</h3>
+                        <p style="color: var(--text-secondary); margin-bottom: 20px; font-size: 14px; line-height: 1.6;" id="authWaitSubtitle">
+                            Follow the instructions below to authenticate.
+                        </p>
+                        <div style="background: var(--bg-tertiary); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 14px 18px; text-align: left; margin-bottom: 16px;">
+                            <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 6px;">Authenticating as</div>
+                            <div style="font-family: 'JetBrains Mono', monospace; font-size: 15px; color: var(--accent-3);" id="authWaitUser">...</div>
+                            <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text-muted); margin-top: 4px;" id="authWaitRepo">...</div>
+                        </div>
+                        <div class="device-status" id="authWaitStatus">
+                            <div class="spinner"></div>
+                            <span id="authWaitMessage">Waiting for backend...</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="closeAddAccountModal()">Cancel</button>
+                </div>
+            </div>
+
+            <!-- Step 3: Success -->
+            <div class="modal-step" id="authStep3">
+                <div class="modal-body" style="text-align: center;">
+                    <div class="success-icon">✅</div>
+                    <h3 style="margin-bottom: 8px; font-size: 18px;">Account Connected!</h3>
+                    <p style="color: var(--text-secondary); margin-bottom: 20px;">Logged in as <strong id="authUsername" style="color: var(--accent-3);"></strong></p>
+                    <div class="form-group" style="text-align: left;">
+                        <label class="form-label">Repository Name</label>
+                        <input class="form-input" type="text" id="authRepoNameFinal" placeholder="e.g. mahoraga11" autocomplete="off">
+                    </div>
+
+                    <div class="form-group" style="text-align: left;">
+                        <label class="form-checkbox">
+                            <input type="checkbox" id="authCreateRepo" checked>
+                            <span>Create repository if it doesn't exist</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="closeAddAccountModal()">Cancel</button>
+                    <button class="btn btn-primary" id="btnSaveAccount" onclick="saveAccount()">Save & Connect</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ DELETE CONFIRMATION MODAL ═══ -->
+    <div class="modal-overlay" id="deleteModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>🗑️ Disconnect Accounts</h2>
+                <button class="modal-close" onclick="closeDeleteModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <p style="color: var(--text-secondary); margin-bottom: 16px; font-size: 14px; line-height: 1.6;">
+                    The following accounts will be <strong style="color: var(--error);">disconnected</strong> from this PC.
+                    Their credentials will be removed from Windows Credential Manager.
+                </p>
+                <ul class="delete-list" id="deleteList"></ul>
+                <div class="delete-warning">
+                    <span class="delete-warning-icon">⚠️</span>
+                    <div>
+                        <strong>This only disconnects locally.</strong><br>
+                        GitHub accounts and repositories will NOT be deleted.
+                        You can re-add them later using "Add Account".
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeDeleteModal()">Cancel</button>
+                <button class="btn btn-danger visible" id="btnConfirmDelete" onclick="confirmDelete()">
+                    <span class="btn-icon">🗑️</span>
+                    Disconnect Accounts
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ DETECT ACCOUNTS MODAL ═══ -->
+    <div class="modal-overlay" id="detectModal">
+        <div class="modal" style="max-width: 620px;">
+            <div class="modal-header">
+                <h2>🔍 Detected Accounts</h2>
+                <button class="modal-close" onclick="closeDetectModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="detect-summary" id="detectSummary" style="display:none;">
+                    <div class="detect-summary-stat">
+                        <div class="num blue" id="detectTotal">0</div>
+                        <div class="lbl">Checked</div>
+                    </div>
+                    <div class="detect-summary-stat">
+                        <div class="num green" id="detectConnected">0</div>
+                        <div class="lbl">Connected</div>
+                    </div>
+                    <div class="detect-summary-stat">
+                        <div class="num red" id="detectDisconnected">0</div>
+                        <div class="lbl">No Token</div>
+                    </div>
+                </div>
+                <div class="detect-extra-input">
+                    <input class="form-input" type="text" id="detectExtraUsernames" placeholder="Extra usernames to check (comma-separated)" autocomplete="off">
+                    <button class="btn btn-secondary" style="white-space:nowrap;" onclick="detectAccounts()">Re-scan</button>
+                </div>
+                <div class="detect-results" id="detectResults">
+                    <div class="empty-state" id="detectLoading">
+                        <div class="spinner" style="width:24px;height:24px;border-width:3px;"></div>
+                        <p style="margin-top:16px;">Scanning Windows Credential Manager...</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeDetectModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ═══════════════════════════════════════════════════════════════
+        //  STATE
+        // ═══════════════════════════════════════════════════════════════
+
+        let ALL_ACCOUNTS = {};
+
+        let logLineCount = 0;
+        let eventSource = null;
+        let currentState = null;
+        let selectedAccounts = new Set();
+        let selectedWorkflowType = 'mahoraga';
+        let elapsedTimer = null;
+
+        // ═══════════════════════════════════════════════════════════════
+        //  INIT
+        // ═══════════════════════════════════════════════════════════════
+
+        document.addEventListener('DOMContentLoaded', () => {
+            refreshStatus();
+        });
+
+        // ═══════════════════════════════════════════════════════════════
+        //  WORKFLOW SELECTOR
+        // ═══════════════════════════════════════════════════════════════
+
+        function selectWorkflow(type) {
+            selectedWorkflowType = type;
+
+            // Update buttons
+            document.querySelectorAll('#workflowGroup .selector-btn').forEach(btn => {
+                btn.classList.remove('active', 'mahoraga', 'dahaka', 'both');
+                if (btn.dataset.type === type) {
+                    btn.classList.add('active', type);
+                }
+            });
+
+            // Sync push target checkboxes
+            const pushM = document.getElementById('pushMahoraga');
+            const pushD = document.getElementById('pushDahaka');
+
+            if (type === 'mahoraga') {
+                pushM.checked = true;
+                pushD.checked = false;
+            } else if (type === 'dahaka') {
+                pushM.checked = false;
+                pushD.checked = true;
+            } else {
+                pushM.checked = true;
+                pushD.checked = true;
+            }
+        }
+
+        function updatePushTargets() {
+            // This just allows the user to manually fine-tune push targets
+            // separately from the workflow type selector
+        }
+
+        function getPushTargets() {
+            const targets = [];
+            if (document.getElementById('pushMahoraga').checked) targets.push('mahoraga');
+            if (document.getElementById('pushDahaka').checked) targets.push('dahaka');
+            if (targets.length === 0) targets.push(selectedWorkflowType);
+            return targets;
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        //  ELAPSED TIMER
+        // ═══════════════════════════════════════════════════════════════
+
+        function startElapsedTimer(startIso) {
+            stopElapsedTimer();
+            const startDate = new Date(startIso);
+
+            function update() {
+                const now = new Date();
+                const diff = Math.floor((now - startDate) / 1000);
+                const mins = Math.floor(diff / 60);
+                const secs = diff % 60;
+                const el = document.getElementById('elapsedText');
+                if (el) {
+                    el.textContent = mins > 0 ? `(${mins}m ${secs}s)` : `(${secs}s)`;
+                }
+            }
+
+            update();
+            elapsedTimer = setInterval(update, 1000);
+        }
+
+        function stopElapsedTimer() {
+            if (elapsedTimer) {
+                clearInterval(elapsedTimer);
+                elapsedTimer = null;
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        //  ACCOUNT CARDS
+        // ═══════════════════════════════════════════════════════════════
+
+        function getAllAccounts() {
+            const all = {};
+            for (const [u, r] of Object.entries(ALL_ACCOUNTS)) {
+                all[u] = { repo: r };
+            }
+            return all;
+        }
+
+        function renderAccountCards(accountData) {
+            const container = document.getElementById('accountsContainer');
+            container.innerHTML = '';
+
+            const allAccounts = getAllAccounts();
+            const users = Object.keys(ALL_ACCOUNTS);
+
+            if (users.length > 0) {
+                const grid = document.createElement('div');
+                grid.className = 'accounts-grid';
+                users.forEach(user => {
+                    grid.appendChild(buildAccountCard(user, ALL_ACCOUNTS[user], 'universal', accountData));
+                });
+                container.appendChild(grid);
+            } else {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">👤</div>
+                        <p>No accounts configured. Click "Add Account" to get started.</p>
+                    </div>
+                `;
+            }
+
+            document.getElementById('accountsBadge').textContent = `${users.length} accounts`;
+            document.getElementById('statTotal').textContent = users.length;
+
+            updateSelectionUI();
+        }
+
+        function buildAccountCard(user, repo, wfType, accountData) {
+            const data = accountData ? accountData[user] : null;
+            const isActive = data?.active === true;
+            const isSuspended = data?.suspended === true;
+            const hasToken = data?.token_ok === true;
+            const isSelected = selectedAccounts.has(user);
+
+            const card = document.createElement('div');
+            card.className = `account-card${isActive ? ' active' : ''}${isSuspended ? ' suspended' : ''}${isSelected ? ' selected' : ''}`;
+            card.dataset.username = user;
+            card.onclick = () => toggleAccountSelection(user);
+            
+            const initials = user.substring(0, 2).toUpperCase();
+            const statusIcon = data
+                ? (isActive ? '✅' : (isSuspended ? '🚫' : (hasToken ? '🔑' : '❌')))
+                : '⏳';
+
+            card.innerHTML = `
+                <div class="account-checkbox">${isSelected ? '✓' : ''}</div>
+                <div class="account-avatar">${initials}</div>
+                <div class="account-info">
+                    <div class="account-name" title="${user}">${user}</div>
+                    <div class="account-repo">
+                        ${repo}
+                        <span class="account-type-tag ${wfType}">${wfType}</span>
+                    </div>
+                </div>
+                <span class="account-status-icon">${statusIcon}</span>
+            `;
+            return card;
+        }
+
+        function toggleAccountSelection(username) {
+            if (selectedAccounts.has(username)) {
+                selectedAccounts.delete(username);
+            } else {
+                selectedAccounts.add(username);
+            }
+
+            const cards = document.querySelectorAll('.account-card');
+            cards.forEach(card => {
+                const user = card.dataset.username;
+                if (user === username) {
+                    const isNowSelected = selectedAccounts.has(username);
+                    card.classList.toggle('selected', isNowSelected);
+                    card.querySelector('.account-checkbox').textContent = isNowSelected ? '✓' : '';
+                }
+            });
+
+            updateSelectionUI();
+        }
+
+        function selectAllAccounts() {
+            const all = getAllAccounts();
+            for (const user of Object.keys(all)) {
+                selectedAccounts.add(user);
+            }
+            renderAccountCards(currentState?.accounts);
+        }
+
+        function deselectAllAccounts() {
+            selectedAccounts.clear();
+            renderAccountCards(currentState?.accounts);
+        }
+
+        function updateSelectionUI() {
+            const count = selectedAccounts.size;
+            const countEl = document.getElementById('selectionCount');
+            const deleteBtn = document.getElementById('btnDeleteSelected');
+
+            if (count > 0) {
+                countEl.textContent = `${count} selected`;
+                countEl.classList.add('visible');
+                deleteBtn.classList.add('visible');
+            } else {
+                countEl.classList.remove('visible');
+                deleteBtn.classList.remove('visible');
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        //  DELETE ACCOUNTS
+        // ═══════════════════════════════════════════════════════════════
+
+        function openDeleteModal() {
+            if (selectedAccounts.size === 0) return;
+
+            const list = document.getElementById('deleteList');
+            list.innerHTML = '';
+
+            const all = getAllAccounts();
+            let idx = 0;
+            selectedAccounts.forEach(user => {
+                const info = all[user];
+                const repo = info ? info.repo : '—';
+                const li = document.createElement('li');
+                li.style.animationDelay = `${idx * 0.05}s`;
+                li.innerHTML = `
+                    <span style="font-size: 16px;">👤</span>
+                    <span class="del-user">${user}</span>
+                    <span class="del-repo">/ ${repo}</span>
+                `;
+                list.appendChild(li);
+                idx++;
+            });
+
+            document.getElementById('deleteModal').classList.add('active');
+        }
+
+        function closeDeleteModal() {
+            document.getElementById('deleteModal').classList.remove('active');
+        }
+
+        async function confirmDelete() {
+            const btn = document.getElementById('btnConfirmDelete');
+            btn.disabled = true;
+            btn.innerHTML = '<div class="spinner"></div> Disconnecting...';
+
+            const usernames = Array.from(selectedAccounts);
+
+            try {
+                const resp = await fetch('/api/accounts/delete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ usernames }),
+                });
+                const data = await resp.json();
+
+                if (data.success) {
+                    // Update local accounts from server
+                    if (data.remaining_accounts) ALL_ACCOUNTS = data.remaining_accounts;
+
+                    selectedAccounts.clear();
+                    closeDeleteModal();
+                    renderAccountCards(currentState?.accounts);
+
+                    addLogLine({
+                        time: new Date().toLocaleTimeString(),
+                        level: 'success',
+                        message: `Disconnected ${usernames.length} account(s): ${usernames.join(', ')}`,
+                    });
+                } else {
+                    alert(data.error || 'Failed to disconnect accounts');
+                }
+            } catch (e) {
+                alert('Error: ' + e.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<span class="btn-icon">🗑️</span> Disconnect Accounts';
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        //  STEPPER
+        // ═══════════════════════════════════════════════════════════════
+
+        function updateStepper(currentStep) {
+            for (let i = 1; i <= 4; i++) {
+                const stepEl = document.getElementById(`step-${i}`);
+                const divEl = document.getElementById(`div-${i}`);
+
+                stepEl.classList.remove('active', 'completed');
+
+                if (i < currentStep) {
+                    stepEl.classList.add('completed');
+                    if (divEl) divEl.classList.add('completed');
+                } else if (i === currentStep) {
+                    stepEl.classList.add('active');
+                    if (divEl) divEl.classList.remove('completed');
+                } else {
+                    if (divEl) divEl.classList.remove('completed');
+                }
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        //  STATS
+        // ═══════════════════════════════════════════════════════════════
+
+        function updateStats(data) {
+            if (!data || !data.accounts) return;
+
+            const accounts = data.accounts;
+            let active = 0;
+            let connected = 0;
+
+            for (const info of Object.values(accounts)) {
+                if (info.active === true) active++;
+                if (info.token_ok === true) connected++;
+            }
+
+            let tunnelCount = 0;
+            if (data.tunnel_urls) {
+                for (const v of Object.values(data.tunnel_urls)) {
+                    if (v && ((typeof v === 'object' && v.url) || (typeof v === 'string' && v))) {
+                        tunnelCount++;
+                    }
+                }
+            }
+
+            document.getElementById('statActive').textContent = active || '—';
+            document.getElementById('statTunnels').textContent = tunnelCount || '—';
+            const connEl = document.getElementById('statConnected');
+            if (connEl) connEl.textContent = connected || '0';
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        //  TUNNEL TABLE
+        // ═══════════════════════════════════════════════════════════════
+
+        function renderTunnelTable(data) {
+            if (!data || !data.active_repos || data.active_repos.length === 0) return;
+
+            document.getElementById('tunnelEmpty').style.display = 'none';
+            document.getElementById('tunnelTable').style.display = 'table';
+
+            const tbody = document.getElementById('tunnelTableBody');
+            tbody.innerHTML = '';
+
+            const tunnels = data.tunnel_urls || {};
+            let liveCount = 0;
+
+            data.active_repos.forEach((item, idx) => {
+                const key = `${item.user}_${item.repo}`;
+                const tunnelData = tunnels[key];
+                // Support both old (string) and new ({url, workflow_type}) format
+                const url = tunnelData ? (typeof tunnelData === 'object' ? tunnelData.url : tunnelData) : null;
+                const wfType = item.workflow_type || (tunnelData && typeof tunnelData === 'object' ? tunnelData.workflow_type : 'mahoraga');
+                if (url) liveCount++;
+
+                const acctInfo = data.accounts[item.user];
+                const isSuspended = acctInfo?.suspended;
+                const isReplacement = item.repo.includes('tunnel');
+
+                let statusTag;
+                if (isSuspended) {
+                    statusTag = '<span class="status-tag suspended">● Suspended</span>';
+                } else if (isReplacement) {
+                    statusTag = '<span class="status-tag replacement">● Replacement</span>';
+                } else {
+                    statusTag = '<span class="status-tag active">● Active</span>';
+                }
+
+                const typeTag = `<span class="type-tag ${wfType}">${wfType === 'mahoraga' ? '⚔️' : '🐉'} ${wfType}</span>`;
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="color: var(--text-muted); font-weight: 600;">${idx + 1}</td>
+                    <td>${typeTag}</td>
+                    <td style="font-weight: 500;">${item.user}</td>
+                    <td><span style="color: var(--accent-2); font-family: 'JetBrains Mono', monospace; font-size: 12px;">${item.repo}</span></td>
+                    <td>${statusTag}</td>
+                    <td>${url
+                        ? `<a class="tunnel-url" href="${url}" target="_blank" rel="noopener">${url}</a>`
+                        : '<span style="color: var(--text-muted);">Waiting...</span>'
+                    }</td>
+                    <td>${url
+                        ? `<button class="copy-btn" onclick="copyUrl(this, '${url}')">📋 Copy</button>`
+                        : '—'
+                    }</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('tunnelBadge').textContent = `${liveCount} live`;
+        }
+
+        function copyUrl(btn, url) {
+            navigator.clipboard.writeText(url).then(() => {
+                btn.classList.add('copied');
+                btn.textContent = '✓ Copied';
+                setTimeout(() => {
+                    btn.classList.remove('copied');
+                    btn.textContent = '📋 Copy';
+                }, 2000);
+            });
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        //  LOG CONSOLE
+        // ═══════════════════════════════════════════════════════════════
+
+        function addLogLine(entry) {
+            const console_ = document.getElementById('logConsole');
+            const emptyState = document.getElementById('logEmpty');
+            if (emptyState) emptyState.style.display = 'none';
+
+            const div = document.createElement('div');
+            div.className = 'log-line';
+            div.innerHTML = `
+                <span class="log-time">${entry.time || ''}</span>
+                <span class="log-msg ${entry.level || 'info'}">${escapeHtml(entry.message || '')}</span>
+            `;
+            console_.appendChild(div);
+
+            logLineCount++;
+            document.getElementById('logCount').textContent = `${logLineCount} lines`;
+
+            // Auto-scroll
+            console_.scrollTop = console_.scrollHeight;
+        }
+
+        function clearLogs() {
+            const console_ = document.getElementById('logConsole');
+            console_.innerHTML = `
+                <div class="empty-state" id="logEmpty">
+                    <div class="empty-state-icon">📋</div>
+                    <p>Logs will appear here when the pipeline runs</p>
+                </div>
+            `;
+            logLineCount = 0;
+            document.getElementById('logCount').textContent = '0 lines';
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        //  STATUS & GLOBAL UI
+        // ═══════════════════════════════════════════════════════════════
+
+        function setGlobalStatus(status) {
+            const dot = document.getElementById('statusDot');
+            const text = document.getElementById('statusText');
+
+            dot.classList.remove('active', 'error', 'complete');
+
+            switch (status) {
+                case 'running':
+                    dot.classList.add('active');
+                    text.textContent = 'Running';
+                    break;
+                case 'completed':
+                    dot.classList.add('complete');
+                    text.textContent = 'Completed';
+                    break;
+                case 'error':
+                    dot.classList.add('error');
+                    text.textContent = 'Error';
+                    break;
+                default:
+                    text.textContent = 'Idle';
+            }
+        }
+
+        function updateWorkflowBadge(data) {
+            const badge = document.getElementById('workflowBadge');
+            const badgeText = document.getElementById('workflowBadgeText');
+            const timeBadge = document.getElementById('timeBadge');
+            const startTimeText = document.getElementById('startTimeText');
+
+            if (data.running || data.completed) {
+                const wf = data.workflow_type || 'mahoraga';
+                badge.style.display = 'flex';
+                badge.className = `workflow-badge ${wf}${data.running ? ' running' : ''}`;
+
+                const labels = { mahoraga: '⚔️ Mahoraga', dahaka: '🐉 Dahaka', both: '🔥 Both' };
+                badgeText.textContent = labels[wf] || wf;
+
+                // Show start time
+                if (data.start_time) {
+                    timeBadge.style.display = 'flex';
+                    startTimeText.textContent = data.start_time;
+
+                    if (data.running && data.start_time_iso) {
+                        startElapsedTimer(data.start_time_iso);
+                    } else {
+                        stopElapsedTimer();
+                    }
+                }
+            } else {
+                badge.style.display = 'none';
+                timeBadge.style.display = 'none';
+                stopElapsedTimer();
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        //  API CALLS
+        // ═══════════════════════════════════════════════════════════════
+
+        async function refreshStatus() {
+            try {
+                const resp = await fetch('/api/status', { cache: 'no-store' });
+                const data = await resp.json();
+                currentState = data;
+
+                // Update accounts from server
+                if (data.all_accounts) ALL_ACCOUNTS = data.all_accounts;
+
+                updateStepper(data.current_step || 0);
+                updateStats(data);
+                renderAccountCards(data.accounts);
+                renderTunnelTable(data);
+                updateWorkflowBadge(data);
+
+                if (data.completed) {
+                    setGlobalStatus('completed');
+                } else if (data.running) {
+                    setGlobalStatus('running');
+                } else if (data.error) {
+                    setGlobalStatus('error');
+                } else {
+                    setGlobalStatus('idle');
+                }
+            } catch (e) {
+                console.error('Status refresh failed:', e);
+            }
+        }
+
+        async function runPipeline() {
+            const btn = document.getElementById('btnRun');
+            btn.disabled = true;
+            btn.innerHTML = '<div class="spinner"></div> Running...';
+
+            clearLogs();
+            setGlobalStatus('running');
+
+            const pushTargets = getPushTargets();
+            const numTunnels = parseInt(document.getElementById('numTunnelsInput').value, 10) || 1;
+            const targetAccounts = Array.from(selectedAccounts);
+
+            if (targetAccounts.length === 0) {
+                alert("Please select at least one GitHub account from the list before running the pipeline.");
+                btn.disabled = false;
+                btn.innerHTML = '<span class="btn-icon">▶</span> Run Pipeline';
+                setGlobalStatus('idle');
+                return;
+            }
+
+            try {
+                const resp = await fetch('/api/run', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        workflow_type: selectedWorkflowType,
+                        push_targets: pushTargets,
+                        num_tunnels: numTunnels,
+                        target_accounts: targetAccounts,
+                    }),
+                });
+                if (!resp.ok) {
+                    const data = await resp.json();
+                    addLogLine({ time: new Date().toLocaleTimeString(), level: 'error', message: data.error || 'Failed to start pipeline' });
+                    setGlobalStatus('error');
+                    btn.disabled = false;
+                    btn.innerHTML = '<span class="btn-icon">▶</span> Run Pipeline';
+                    return;
+                }
+            } catch (e) {
+                addLogLine({ time: new Date().toLocaleTimeString(), level: 'error', message: `Connection error: ${e.message}` });
+                setGlobalStatus('error');
+                btn.disabled = false;
+                btn.innerHTML = '<span class="btn-icon">▶</span> Run Pipeline';
+                return;
+            }
+
+            // Start SSE stream
+            startEventStream();
+        }
+
+        function startEventStream() {
+            if (eventSource) {
+                eventSource.close();
+            }
+
+            eventSource = new EventSource('/api/stream');
+
+            eventSource.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+
+                    if (data.type === 'state') {
+                        currentState = data.data;
+                        if (data.data.all_accounts) ALL_ACCOUNTS = data.data.all_accounts;
+
+                        updateStepper(data.data.current_step || 0);
+                        updateStats(data.data);
+                        renderAccountCards(data.data.accounts);
+                        renderTunnelTable(data.data);
+                        updateWorkflowBadge(data.data);
+
+                        if (data.data.completed) {
+                            setGlobalStatus('completed');
+                            stopElapsedTimer();
+                            eventSource.close();
+                            const btn = document.getElementById('btnRun');
+                            btn.disabled = false;
+                            btn.innerHTML = '<span class="btn-icon">▶</span> Run Pipeline';
+                        } else if (!data.data.running && !data.data.completed) {
+                            // Pipeline stopped early / crashed
+                            setGlobalStatus('error');
+                            stopElapsedTimer();
+                            eventSource.close();
+                            const btn = document.getElementById('btnRun');
+                            btn.disabled = false;
+                            btn.innerHTML = '<span class="btn-icon">▶</span> Run Pipeline';
+                        }
+                    } else {
+                        addLogLine(data);
+                        updateStepper(data.step || 0);
+
+                        if (logLineCount % 5 === 0) {
+                            refreshStatus();
+                        }
+                    }
+                } catch (e) {
+                    // Ignore parse errors (heartbeats)
+                }
+            };
+
+            eventSource.onerror = () => {
+                setTimeout(() => {
+                    refreshStatus();
+                    const btn = document.getElementById('btnRun');
+                    btn.disabled = false;
+                    btn.innerHTML = '<span class="btn-icon">▶</span> Run Pipeline';
+                }, 2000);
+            };
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        //  MANUAL GIT AUTH
+        // ═══════════════════════════════════════════════════════════════
+
+        let authSessionId = null;
+        let authPollTimer = null;
+
+        function openAddAccountModal() {
+            document.getElementById('addAccountModal').classList.add('active');
+            showAuthStep(1);
+            document.getElementById('authInput').value = '';
+            document.getElementById('authRepoName').value = '';
+        }
+
+        function closeAddAccountModal() {
+            document.getElementById('addAccountModal').classList.remove('active');
+            if (authPollTimer) {
+                clearInterval(authPollTimer);
+                authPollTimer = null;
+            }
+            authSessionId = null;
+        }
+
+        function showAuthStep(step) {
+            document.querySelectorAll('.modal-step').forEach(el => el.classList.remove('active'));
+            document.getElementById(`authStep${step}`).classList.add('active');
+        }
+
+        async function startGitAuth() {
+            const rawInput = document.getElementById('authInput').value.trim();
+            const repoName = document.getElementById('authRepoName').value.trim();
+
+            if (!rawInput) {
+                alert('Please enter a GitHub username or repository URL.');
+                return;
+            }
+
+            const btn = document.getElementById('btnStartAuth');
+            btn.disabled = true;
+            btn.innerHTML = '<div class="spinner"></div> Connecting...';
+
+            try {
+                const resp = await fetch('/api/auth/start', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ input: rawInput, repo_name: repoName }),
+                });
+                const data = await resp.json();
+
+                if (!resp.ok) {
+                    alert(data.error || 'Failed to start authentication');
+                    btn.disabled = false;
+                    btn.innerHTML = 'Connect Account';
+                    return;
+                }
+
+                authSessionId = data.session_id;
+
+                document.getElementById('authWaitUser').textContent = data.username;
+                document.getElementById('authWaitRepo').textContent = data.repo;
+                document.getElementById('authWaitStatus').className = 'device-status';
+                document.getElementById('authWaitStatus').innerHTML = '<div class="spinner"></div><span>Git Credential Manager is launching...</span>';
+
+                showAuthStep(2);
+
+                startAuthPolling(data.username, data.repo);
+
+            } catch (e) {
+                alert('Connection error: ' + e.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = 'Connect Account';
+            }
+        }
+
+        function startAuthPolling(username, repo) {
+            if (authPollTimer) clearInterval(authPollTimer);
+
+            authPollTimer = setInterval(async () => {
+                if (!authSessionId) return;
+
+                try {
+                    const resp = await fetch(`/api/auth/poll/${authSessionId}`);
+                    const data = await resp.json();
+
+                    const statusEl = document.getElementById('authWaitStatus');
+
+                    if (data.status === 'authorized') {
+                        clearInterval(authPollTimer);
+                        authPollTimer = null;
+
+                        statusEl.className = 'device-status success';
+                        statusEl.innerHTML = '<span>✅ Login successful!</span>';
+
+                        setTimeout(() => {
+                            document.getElementById('authUsername').textContent = data.username;
+                            const repoInput = document.getElementById('authRepoNameFinal');
+                            const allAccounts = getAllAccounts();
+                            const totalCount = Object.keys(allAccounts).length;
+                            repoInput.value = data.repo || `mahoraga${totalCount + 1}`;
+
+
+
+                            showAuthStep(3);
+                        }, 1000);
+
+                    } else if (data.status === 'error') {
+                        clearInterval(authPollTimer);
+                        authPollTimer = null;
+
+                        statusEl.className = 'device-status error';
+                        statusEl.innerHTML = `<span>❌ ${escapeHtml(data.message || 'Error')}</span>`;
+                        const btn = document.getElementById('btnStartAuth');
+                        btn.disabled = false;
+                        btn.innerHTML = 'Try Again';
+
+                    } else {
+                        // waiting_login
+                        if (data.user_code && data.verification_uri) {
+                            const codeHTML = `
+                                <div style="margin-bottom: 12px; font-size: 14px;">ACTION REQUIRED: Go to <a href="${data.verification_uri}" target="_blank" style="color:var(--accent-3); text-decoration:underline;">${data.verification_uri}</a> and enter code:</div>
+                                <div onclick="navigator.clipboard.writeText('${data.user_code}'); this.innerHTML='Copied!'; setTimeout(()=>this.innerHTML='${data.user_code}', 2000);" style="display:inline-block; margin-top:4px; cursor:pointer; background:rgba(99,102,241,0.15); border: 1px solid var(--accent-1); padding: 12px 24px; border-radius:var(--radius-md); font-family:'JetBrains Mono', monospace; color:white; font-size: 24px; font-weight:bold; letter-spacing: 4px; transition: all 0.2s;" onmouseover="this.style.background='rgba(99,102,241,0.3)'" onmouseout="this.style.background='rgba(99,102,241,0.15)'" title="Click to copy">${data.user_code}</div>
+                            `;
+                            statusEl.className = 'device-status';
+                            statusEl.innerHTML = `<div style="text-align:center; padding:10px;">${codeHTML}</div>`;
+                        } else {
+                            statusEl.innerHTML = `<div class="spinner"></div><span style="display:inline-block; margin-left:10px;">${escapeHtml(data.message)}</span>`;
+                        }
+                    }
+                } catch (e) {
+                    console.error('Auth poll error:', e);
+                }
+            }, 2000);
+        }
+
+        async function saveAccount() {
+            const repoName = document.getElementById('authRepoNameFinal').value.trim();
+            const createRepo = document.getElementById('authCreateRepo').checked;
+
+            const btn = document.getElementById('btnSaveAccount');
+            btn.disabled = true;
+            btn.innerHTML = '<div class="spinner"></div> Saving...';
+
+            try {
+                const resp = await fetch('/api/auth/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        session_id: authSessionId,
+                        repo_name: repoName,
+                        create_repo: createRepo,
+                    }),
+                });
+                const data = await resp.json();
+
+                if (data.success) {
+                    // Update local accounts
+                    ALL_ACCOUNTS[data.username] = data.repo_name;
+
+                    refreshStatus();
+                    closeAddAccountModal();
+
+                    addLogLine({
+                        time: new Date().toLocaleTimeString(),
+                        level: 'success',
+                        message: `Account ${data.username} added with repo ${data.repo_name}`,
+                    });
+                } else {
+                    alert(data.error || 'Failed to save account');
+                }
+            } catch (e) {
+                alert('Error: ' + e.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = 'Save & Connect';
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        //  DETECT CONNECTED ACCOUNTS
+        // ═══════════════════════════════════════════════════════════════
+
+        function closeDetectModal() {
+            document.getElementById('detectModal').classList.remove('active');
+        }
+
+        async function detectAccounts() {
+            // Open modal immediately
+            document.getElementById('detectModal').classList.add('active');
+
+            // Show loading
+            const resultsEl = document.getElementById('detectResults');
+            const summaryEl = document.getElementById('detectSummary');
+            summaryEl.style.display = 'none';
+            resultsEl.innerHTML = `
+                <div class="empty-state" id="detectLoading">
+                    <div class="spinner" style="width:24px;height:24px;border-width:3px;"></div>
+                    <p style="margin-top:16px;">Scanning Windows Credential Manager for GitHub accounts...</p>
+                    <p style="margin-top:4px; font-size:11px; color:var(--text-muted);">This may take a moment</p>
+                </div>
+            `;
+
+            // Get extra usernames from input
+            const extraInput = document.getElementById('detectExtraUsernames').value.trim();
+            const extraUsernames = extraInput
+                ? extraInput.split(',').map(s => s.trim()).filter(s => s)
+                : [];
+
+            // Disable button
+            const btn = document.getElementById('btnDetect');
+            btn.disabled = true;
+            btn.innerHTML = '<div class="spinner"></div> Scanning...';
+
+            try {
+                const resp = await fetch('/api/accounts/detect', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ usernames: extraUsernames }),
+                });
+                const data = await resp.json();
+
+                if (data.success) {
+                    renderDetectResults(data);
+                } else {
+                    resultsEl.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">❌</div>
+                            <p>Detection failed: ${escapeHtml(data.error || 'Unknown error')}</p>
+                        </div>
+                    `;
+                }
+            } catch (e) {
+                resultsEl.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">❌</div>
+                        <p>Connection error: ${escapeHtml(e.message)}</p>
+                    </div>
+                `;
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<span class="btn-icon">🔍</span> Detect Connected';
+            }
+        }
+
+        function renderDetectResults(data) {
+            const resultsEl = document.getElementById('detectResults');
+            const summaryEl = document.getElementById('detectSummary');
+
+            // Update summary stats
+            const connected = data.connected_count || 0;
+            const total = data.total_checked || 0;
+            const disconnected = total - connected;
+
+            document.getElementById('detectTotal').textContent = total;
+            document.getElementById('detectConnected').textContent = connected;
+            document.getElementById('detectDisconnected').textContent = disconnected;
+            summaryEl.style.display = 'flex';
+
+            // Sort: connected first, then disconnected
+            const entries = Object.values(data.detected || {});
+            entries.sort((a, b) => {
+                if (a.has_token && !b.has_token) return -1;
+                if (!a.has_token && b.has_token) return 1;
+                return a.username.localeCompare(b.username);
+            });
+
+            resultsEl.innerHTML = '';
+
+            if (entries.length === 0) {
+                resultsEl.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🤷</div>
+                        <p>No accounts to check. Add usernames above and re-scan.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            entries.forEach((acct, idx) => {
+                const isConnected = acct.has_token;
+                const isVerified = acct.github_verified;
+                const isConfigured = acct.already_configured;
+
+                const div = document.createElement('div');
+                div.className = `detect-account ${isConnected ? 'connected' : 'disconnected'}`;
+                div.style.animationDelay = `${idx * 0.04}s`;
+
+                const avatar = isConnected ? '✅' : '❌';
+
+                let statusTags = '';
+                if (isConnected && isVerified) {
+                    statusTags += '<span class="detect-status-tag connected">Verified</span> ';
+                } else if (isConnected) {
+                    statusTags += '<span class="detect-status-tag connected">Token Found</span> ';
+                } else {
+                    statusTags += '<span class="detect-status-tag not-connected">No Token</span> ';
+                }
+                if (isConfigured) {
+                    statusTags += `<span class="detect-status-tag configured">Configured</span>`;
+                }
+
+                let detailText = '';
+                if (isConnected) {
+                    detailText = `Token: ${acct.token_length} chars`;
+                    if (acct.github_username && acct.github_username !== acct.username) {
+                        detailText += ` · GitHub: ${acct.github_username}`;
+                    }
+                    if (acct.repos && acct.repos.length > 0) {
+                        detailText += ` · ${acct.repos.length} repo(s)`;
+                    }
+                } else {
+                    detailText = 'No credential found in Windows Credential Manager';
+                }
+
+                let reposHtml = '';
+                if (acct.repos && acct.repos.length > 0) {
+                    const chips = acct.repos.slice(0, 10).map(r =>
+                        `<span class="detect-repo-chip">${escapeHtml(r.name)}</span>`
+                    ).join('');
+                    const extra = acct.repos.length > 10 ? `<span class="detect-repo-chip">+${acct.repos.length - 10} more</span>` : '';
+                    reposHtml = `<div class="detect-repos">${chips}${extra}</div>`;
+                }
+
+                div.innerHTML = `
+                    <div class="detect-avatar">${avatar}</div>
+                    <div class="detect-info">
+                        <div class="detect-name">${escapeHtml(acct.username)}</div>
+                        <div class="detect-detail">${detailText}</div>
+                        ${reposHtml}
+                    </div>
+                    <div>${statusTags}</div>
+                `;
+
+                resultsEl.appendChild(div);
+            });
+
+            // Also log to console
+            addLogLine({
+                time: new Date().toLocaleTimeString(),
+                level: 'success',
+                message: `🔍 Account scan: ${connected}/${total} connected`,
+            });
+        }
+
+        async function runGeneratorEmails() {
+            try {
+                addLogLine({ time: new Date().toLocaleTimeString(), level: 'info', message: 'Starting Generator Emails...' });
+                const btn = document.getElementById('btnGeneratorEmails');
+                if (btn) btn.disabled = true;
+
+                const response = await fetch('/api/run-generator-emails', { method: 'POST' });
+                const data = await response.json();
+                
+                if (btn) btn.disabled = false;
+                
+                if (data.status === 'success' && data.url) {
+                    addLogLine({ time: new Date().toLocaleTimeString(), level: 'success', message: 'Generator Emails started at ' + data.url });
+                    // Open in popup window
+                    window.open(data.url, 'GeneratorEmailsPopup', 'width=1000,height=800,menubar=no,toolbar=no,location=no,status=no');
+                } else {
+                    addLogLine({ time: new Date().toLocaleTimeString(), level: 'error', message: 'Failed to start Generator Emails: ' + (data.message || 'Unknown error') });
+                    alert('Error: ' + (data.message || 'Failed to get URL'));
+                }
+            } catch (err) {
+                const btn = document.getElementById('btnGeneratorEmails');
+                if (btn) btn.disabled = false;
+                addLogLine({ time: new Date().toLocaleTimeString(), level: 'error', message: 'Error calling generator emails endpoint: ' + err.message });
+            }
+        }
+
+        // ═══ GET CURRENT TUNNEL URLs ═══
+        async function getCurrentUrls() {
+            const btn = document.getElementById('btnGetUrls');
+            const originalHTML = btn.innerHTML;
+
+            // Must have selected accounts
+            const accounts = Array.from(selectedAccounts);
+            if (accounts.length === 0) {
+                addLogLine({ time: new Date().toLocaleTimeString(), level: 'warn', message: '⚠️ Select at least one account first.' });
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span> Checking...';
+
+            addLogLine({ time: new Date().toLocaleTimeString(), level: 'info', message: `🌐 Checking tunnel URLs for ${accounts.length} account(s)...` });
+
+            try {
+                const resp = await fetch('/api/tunnels/check', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ accounts }),
+                });
+                const data = await resp.json();
+
+                if (data.status === 'error') {
+                    addLogLine({ time: new Date().toLocaleTimeString(), level: 'error', message: '❌ ' + data.message });
+                    btn.disabled = false;
+                    btn.innerHTML = originalHTML;
+                    return;
+                }
+
+                // Populate the Tunnel URLs table
+                const tunnels = data.tunnels || {};
+                const activeRepos = data.active_repos || [];
+
+                document.getElementById('tunnelEmpty').style.display = 'none';
+                document.getElementById('tunnelTable').style.display = 'table';
+
+                const tbody = document.getElementById('tunnelTableBody');
+                tbody.innerHTML = '';
+                let liveCount = 0;
+
+                activeRepos.forEach((item, idx) => {
+                    const key = `${item.user}_${item.repo}`;
+                    const tunnelData = tunnels[key];
+                    const url = tunnelData ? tunnelData.url : null;
+                    const wfType = item.workflow_type || 'mahoraga';
+                    if (url) liveCount++;
+
+                    const statusTag = url
+                        ? '<span class="status-tag active">● Live</span>'
+                        : '<span class="status-tag suspended">● Offline</span>';
+
+                    const typeTag = `<span class="type-tag ${wfType}">${wfType === 'mahoraga' ? '⚔️' : '🐉'} ${wfType}</span>`;
+
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td style="color: var(--text-muted); font-weight: 600;">${idx + 1}</td>
+                        <td>${typeTag}</td>
+                        <td style="font-weight: 500;">${item.user}</td>
+                        <td><span style="color: var(--accent-2); font-family: 'JetBrains Mono', monospace; font-size: 12px;">${item.repo}</span></td>
+                        <td>${statusTag}</td>
+                        <td>${url
+                            ? `<a class="tunnel-url" href="${url}" target="_blank" rel="noopener">${url}</a>`
+                            : '<span style="color: var(--text-muted);">—</span>'
+                        }</td>
+                        <td>${url
+                            ? `<button class="copy-btn" onclick="copyUrl(this, '${url}')">📋 Copy</button>`
+                            : '—'
+                        }</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+
+                document.getElementById('tunnelBadge').textContent = `${liveCount} live`;
+
+                // Update the tunnels stat counter
+                const statEl = document.getElementById('statTunnels');
+                if (statEl) statEl.textContent = liveCount || '0';
+
+                addLogLine({ time: new Date().toLocaleTimeString(), level: 'info', message: `📊 Live: ${data.live} | Dead: ${data.dead} | Total: ${data.total}` });
+
+            } catch (err) {
+                addLogLine({ time: new Date().toLocaleTimeString(), level: 'error', message: '❌ Failed to check tunnels: ' + err.message });
+            }
+
+            btn.disabled = false;
+            btn.innerHTML = originalHTML;
+        }
+    </script>
+</body>
+</html>
